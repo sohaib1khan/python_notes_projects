@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import pyperclip
 import time
+import keyboard  # Library to simulate typing
 
 class TextCopyDashboard:
     def __init__(self, root):
@@ -27,6 +28,9 @@ class TextCopyDashboard:
         copy_button = ttk.Button(predefined_frame, text="Copy Selected Text", command=self.copy_predefined_text)
         copy_button.pack(side="right", padx=5, pady=5)
 
+        type_button = ttk.Button(predefined_frame, text="Type Selected Text", command=self.type_predefined_text)
+        type_button.pack(side="right", padx=5, pady=5)
+
         # Frame for custom text
         custom_frame = ttk.LabelFrame(root, text="Custom Text")
         custom_frame.pack(padx=10, pady=10, fill="x")
@@ -36,6 +40,9 @@ class TextCopyDashboard:
 
         custom_copy_button = ttk.Button(custom_frame, text="Copy Custom Text", command=self.copy_custom_text)
         custom_copy_button.pack(side="right", padx=5, pady=5)
+
+        custom_type_button = ttk.Button(custom_frame, text="Type Custom Text", command=self.type_custom_text)
+        custom_type_button.pack(side="right", padx=5, pady=5)
 
         # Frame for retry settings
         retry_frame = ttk.LabelFrame(root, text="Retry Settings")
@@ -66,12 +73,27 @@ class TextCopyDashboard:
         text = self.predefined_texts[selected[0]]
         self.copy_text_to_clipboard(text)
 
+    def type_predefined_text(self):
+        selected = self.text_listbox.curselection()
+        if not selected:
+            messagebox.showerror("Error", "Please select a predefined text.")
+            return
+        text = self.predefined_texts[selected[0]]
+        self.simulate_typing(text)
+
     def copy_custom_text(self):
         text = self.custom_text_entry.get()
         if not text:
             messagebox.showerror("Error", "Please enter custom text to copy.")
             return
         self.copy_text_to_clipboard(text)
+
+    def type_custom_text(self):
+        text = self.custom_text_entry.get()
+        if not text:
+            messagebox.showerror("Error", "Please enter custom text to type.")
+            return
+        self.simulate_typing(text)
 
     def copy_text_to_clipboard(self, text):
         retries = self.retry_count.get()
@@ -84,6 +106,12 @@ class TextCopyDashboard:
                 return
         self.text_status.set("Failed to copy text after multiple attempts.")
         messagebox.showerror("Error", "Failed to copy text after multiple attempts.")
+
+    def simulate_typing(self, text):
+        for char in text:
+            keyboard.write(char)
+            time.sleep(0.05)  # Adjust the delay for typing speed
+        self.text_status.set(f"Text typed successfully: {text}")
 
 if __name__ == "__main__":
     root = tk.Tk()
