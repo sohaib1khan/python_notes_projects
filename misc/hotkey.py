@@ -1,71 +1,91 @@
-import keyboard
+import tkinter as tk
+from tkinter import messagebox, ttk
 import pyperclip
 import time
 
-def paste_predefined_text():
-    """Paste predefined text into RDP."""
-    predefined_text = "This is the predefined text!"
-    pyperclip.copy(predefined_text)
-    time.sleep(0.2)  # Ensure clipboard updates
-    print(f"Pasting predefined text: {predefined_text}")
-    for _ in range(5):  # Paste multiple times for reliability
-        keyboard.send("ctrl+v")
-        time.sleep(0.5)
+class TextCopyDashboard:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Text Copy Dashboard")
 
-def copy_and_paste_live_text():
-    """Copy text and paste it aggressively into RDP."""
-    max_retries = 5
-    copied_text = ""
+        self.text_status = tk.StringVar()
+        self.text_status.set("No text copied yet.")
 
-    # Aggressive copying
-    for attempt in range(max_retries):
-        keyboard.send("ctrl+c")  # Copy selected text
-        time.sleep(0.5)  # Wait for clipboard to update
-        copied_text = pyperclip.paste()
-        if copied_text:
-            print(f"Copied text (Attempt {attempt + 1}): {copied_text}")
-            break
-    else:
-        print("Failed to copy text after multiple attempts.")
-        return
+        self.retry_count = tk.IntVar()
+        self.retry_count.set(3)
 
-    # Aggressive pasting
-    print("Pasting copied text...")
-    for _ in range(5):  # Paste multiple times for reliability
-        keyboard.send("ctrl+v")
-        time.sleep(0.5)
+        # Frame for predefined text
+        predefined_frame = ttk.LabelFrame(root, text="Predefined Text")
+        predefined_frame.pack(padx=10, pady=10, fill="x")
 
-def paste_hardcoded_text_1():
-    """Manually paste hardcoded text #1."""
-    hardcoded_text = "Hardcoded Text 1: Example of a manual entry."
-    pyperclip.copy(hardcoded_text)
-    time.sleep(0.2)  # Ensure clipboard updates
-    print(f"Pasting hardcoded text #1: {hardcoded_text}")
-    for _ in range(5):
-        keyboard.send("ctrl+v")
-        time.sleep(0.5)
+        self.predefined_texts = ["Sample Path 1", "Sample Path 2"]
+        self.text_listbox = tk.Listbox(predefined_frame, height=4)
+        for text in self.predefined_texts:
+            self.text_listbox.insert(tk.END, text)
+        self.text_listbox.pack(side="left", padx=5, pady=5)
 
-def paste_hardcoded_text_2():
-    """Manually paste hardcoded text #2."""
-    hardcoded_text = "Hardcoded Text 2: Another manual entry for testing."
-    pyperclip.copy(hardcoded_text)
-    time.sleep(0.2)  # Ensure clipboard updates
-    print(f"Pasting hardcoded text #2: {hardcoded_text}")
-    for _ in range(5):
-        keyboard.send("ctrl+v")
-        time.sleep(0.5)
+        copy_button = ttk.Button(predefined_frame, text="Copy Selected Text", command=self.copy_predefined_text)
+        copy_button.pack(side="right", padx=5, pady=5)
 
-# Register hotkeys
-keyboard.add_hotkey("ctrl+1", paste_predefined_text)
-keyboard.add_hotkey("ctrl+2", copy_and_paste_live_text)
-keyboard.add_hotkey("ctrl+3", paste_hardcoded_text_1)
-keyboard.add_hotkey("ctrl+4", paste_hardcoded_text_2)
+        # Frame for custom text
+        custom_frame = ttk.LabelFrame(root, text="Custom Text")
+        custom_frame.pack(padx=10, pady=10, fill="x")
 
-# Start the listener
-print("Hotkey tool is running...")
-print("Press Ctrl+1 to paste predefined text.")
-print("Press Ctrl+2 to copy current text and paste it.")
-print("Press Ctrl+3 to paste hardcoded text #1.")
-print("Press Ctrl+4 to paste hardcoded text #2.")
-print("Press 'Esc' to exit.")
-keyboard.wait("esc")  # Exit on 'Esc'
+        self.custom_text_entry = ttk.Entry(custom_frame)
+        self.custom_text_entry.pack(side="left", fill="x", expand=True, padx=5, pady=5)
+
+        custom_copy_button = ttk.Button(custom_frame, text="Copy Custom Text", command=self.copy_custom_text)
+        custom_copy_button.pack(side="right", padx=5, pady=5)
+
+        # Frame for retry settings
+        retry_frame = ttk.LabelFrame(root, text="Retry Settings")
+        retry_frame.pack(padx=10, pady=10, fill="x")
+
+        retry_label = ttk.Label(retry_frame, text="Retries:")
+        retry_label.pack(side="left", padx=5, pady=5)
+
+        retry_spinbox = ttk.Spinbox(retry_frame, from_=1, to=10, textvariable=self.retry_count, width=5)
+        retry_spinbox.pack(side="left", padx=5, pady=5)
+
+        # Status display
+        status_frame = ttk.LabelFrame(root, text="Status")
+        status_frame.pack(padx=10, pady=10, fill="x")
+
+        self.status_label = ttk.Label(status_frame, textvariable=self.text_status)
+        self.status_label.pack(padx=5, pady=5)
+
+        # Exit button
+        exit_button = ttk.Button(root, text="Exit", command=self.root.quit)
+        exit_button.pack(pady=10)
+
+    def copy_predefined_text(self):
+        selected = self.text_listbox.curselection()
+        if not selected:
+            messagebox.showerror("Error", "Please select a predefined text.")
+            return
+        text = self.predefined_texts[selected[0]]
+        self.copy_text_to_clipboard(text)
+
+    def copy_custom_text(self):
+        text = self.custom_text_entry.get()
+        if not text:
+            messagebox.showerror("Error", "Please enter custom text to copy.")
+            return
+        self.copy_text_to_clipboard(text)
+
+    def copy_text_to_clipboard(self, text):
+        retries = self.retry_count.get()
+        for attempt in range(retries):
+            pyperclip.copy(text)
+            time.sleep(0.5)  # Wait for clipboard to update
+            copied_text = pyperclip.paste()
+            if copied_text == text:
+                self.text_status.set(f"Text copied successfully on attempt {attempt + 1}: {text}")
+                return
+        self.text_status.set("Failed to copy text after multiple attempts.")
+        messagebox.showerror("Error", "Failed to copy text after multiple attempts.")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TextCopyDashboard(root)
+    root.mainloop()
